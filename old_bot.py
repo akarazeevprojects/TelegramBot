@@ -1,4 +1,5 @@
-#!/Library/Frameworks/Python.framework/Versions/3.5/bin/python3
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 import telegram
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, RegexHandler
@@ -36,6 +37,8 @@ def unknow(bot, update):
 	bot.sendMessage(chat_id=update.message.chat_id, text='gtfo, plz')
 
 def stop(bot, update):
+	global updater
+	print('= updater.stop() =')
 	updater.stop()
 
 def gettabs(bot, update):
@@ -51,7 +54,7 @@ def getip(bot, update):
 		text = text.rstrip()
 		bot.sendMessage(chat_id=update.message.chat_id, text='Public: ' + text)
 	else:
-		bot.sendMessage(chat_id=update.message.chat_id, text='I dunno ¯\_(ツ)_/¯')
+		bot.sendMessage(chat_id=update.message.chat_id, text='I dunno')
 
 def caps(bot, update, args):
 	text_caps = ' '.join(args).upper()
@@ -76,19 +79,19 @@ def main():
 
 	updater.start_polling()
 
-	# bot = telegram.Bot(token=GetToken())
-	# print(bot.getMe())
-	# updates = bot.getUpdates()
-	# print([u.message.text for u in updates])
-	# chat_id = bot.getUpdates()[-1].message.chat_id
-	# print(chat_id)
+	bot = telegram.Bot(token=GetToken())
+	print(bot.getMe())
+	updates = bot.getUpdates()
+	print([u.message.text for u in updates])
+	chat_id = bot.getUpdates()[-1].message.chat_id
+	print(chat_id)
 
-	# bot.sendMessage(chat_id=chat_id, text=updates[-1].message.text)
-	# bot.sendMessage(chat_id=chat_id, text="*bold* _italic_ [link](http://google.com).", parse_mode=telegram.ParseMode.MARKDOWN)
-	# bot.sendMessage(chat_id=chat_id, text=telegram.Emoji.PILE_OF_POO)
-	# bot.sendPhoto(chat_id=chat_id, photo='https://storage.mds.yandex.net/get-sport/10493/f03a90be063e60babadb018cafe033ad.png')
-	# bot.sendPhoto(chat_id=chat_id, photo=open('../image_png/cards/01_a.jpg', 'rb'))
-	# bot.sendVoice(chat_id=chat_id, voice=open('/Users/AntonWetret/Music/The Elder Scrolls Skyrim OST/Complete Score/mus_levelup_03.mp3', 'rb'))
+	bot.sendMessage(chat_id=chat_id, text=updates[-1].message.text)
+	bot.sendMessage(chat_id=chat_id, text="*bold* _italic_ [link](http://google.com).", parse_mode=telegram.ParseMode.MARKDOWN)
+	bot.sendMessage(chat_id=chat_id, text=telegram.Emoji.PILE_OF_POO)
+	bot.sendPhoto(chat_id=chat_id, photo='https://storage.mds.yandex.net/get-sport/10493/f03a90be063e60babadb018cafe033ad.png')
+	bot.sendPhoto(chat_id=chat_id, photo=open('../image_png/cards/01_a.jpg', 'rb'))
+	bot.sendVoice(chat_id=chat_id, voice=open('/Users/AntonWetret/Music/The Elder Scrolls Skyrim OST/Complete Score/mus_levelup_03.mp3', 'rb'))
 
 	# custom_keyboard = [[ telegram.KeyboardButton(telegram.Emoji.THUMBS_UP_SIGN),\
 	# 	telegram.KeyboardButton(telegram.Emoji.THUMBS_DOWN_SIGN) ]]
@@ -105,4 +108,3 @@ def main():
 
 if __name__ == '__main__':
 	main()
-	
