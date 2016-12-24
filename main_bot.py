@@ -16,10 +16,13 @@ bot.
 """
 
 from telegram.ext import Updater, CommandHandler, Job, MessageHandler, Filters
+import random
 import datetime
 import logging
 import json
+import subprocess
 import os
+import sqlite_handler as sh
 
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -29,11 +32,15 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
+spath = os.path.dirname(os.path.realpath(__file__))
+db = sh.database(os.path.join(spath, 'data.db'))
+listening_for_record = False
+
 PHRASES = ['Чем ты занят?', 'Опять видосы смотришь?', 'Про физику не забыл?']
 
 
 def get_token():
-    path = 'token.json'
+    path = os.path.join(spath, 'token.json')
     with open(path) as jsn:
         data = json.load(jsn)
     return data['token']
@@ -50,30 +57,72 @@ def alarm(bot, job):
     bot.sendMessage(job.context, text='Beep!')
 
 
-def echo(bot, update):
-    chat_id = str(update.message.chat.id)
+def add_record(chat_id, msg_text):
     now = datetime.datetime.utcnow()
     year = now.strftime("%Y")
     month = now.strftime("%m")
     day_time = now.strftime("%d%H%M%S")
 
-    path = os.path.join(chat_id, year, month, day_time)
+    path = os.path.join(spath, chat_id, year, month, day_time)
     if os.path.exists(path):
         # TODO: make nicer
         assert(1 == 0)
     else:
         os.makedirs(path)
 
-    with open(os.path.join(path, 'msg.txt'), 'w') as f:
-        f.write(update.message.text.encode('utf-8'))
+    msg_path = os.path.join(path, 'msg.txt')
 
-    update.message.reply_text('Your message is stored at {}.\nAnything else?'.format(path))
+    cur_secs = int(now.strftime("%s"))
+    values = [chat_id, cur_secs, msg_path]
+    db.insert('users', values)
 
-# def say_smt(bot, job):
+    with open(msg_path, 'w') as f:
+        f.write(msg_text)
 
+    return path
+
+def echo(bot, update):
+    global listening_for_record
+
+    chat_id = str(update.message.chat.id)
+    msg_text = update.message.text.encode('utf-8')
+
+    if listening_for_record:
+        path = add_record(chat_id, msg_text)
+        listening_for_record = False
+        update.message.reply_text('Your message is stored at {}.\nAnything else?'.format(path))
+    else:
+        update.message.reply_text('echo: {}'.format(msg_text))
+
+
+def show_db(bot, update):
+    cursor = db.select_all('users')
+    text = '\n'.join(map(str, cursor))
+    update.message.reply_text(text)
+
+
+def ask(bot, update):
+    update.message.reply_text(PHRASES[random.randint(0, len(PHRASES)-1)])
+
+
+def sigrecord(bot, update):
+    global listening_for_record
+    listening_for_record = True
+    update.message.reply_text('Хорошо, я слушаю 👂🏼')
+
+
+# TODO: Make it work!
+def temp(bot, update):
+    ## call date command ##
+    p = subprocess.Popen(["temp"], stdout=subprocess.PIPE)
+    # update.message.reply_text('one sec pls...')
+    # update.message.reply_text(subprocess.call("date"))
+    (output, err) = p.communicate()
+    ## Wait for date to terminate. Get return returncode ##
+    # p_status = p.wait()
+    update.message.reply_text(output)
 
 # def lets_chat(bot, update, args, job_queue, chat_data):
-
 
 
 def set(bot, update, args, job_queue, chat_data):
@@ -124,6 +173,10 @@ def main():
     # on different commands - answer in Telegram
     dp.add_handler(CommandHandler("start", start))
     dp.add_handler(CommandHandler("help", start))
+    dp.add_handler(CommandHandler("ask", ask))
+    dp.add_handler(CommandHandler("r", sigrecord))
+    dp.add_handler(CommandHandler("show", show_db))
+    dp.add_handler(CommandHandler("temp", temp))
     dp.add_handler(CommandHandler("set", set,
                                   pass_args=True,
                                   pass_job_queue=True,
