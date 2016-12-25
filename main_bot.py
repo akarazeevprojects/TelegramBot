@@ -22,6 +22,7 @@ import logging
 import json
 import subprocess
 import os
+import textwrap
 import sqlite_handler as sh
 
 import RPi.GPIO as GPIO
@@ -177,9 +178,9 @@ def error(bot, update, error):
     logger.warning('Update "%s" caused error "%s"' % (update, error))
 
 
-def main():
-    """
-    all commands:
+def show_commands(bot, update):
+    cmds = """\
+    Command List:
     start - show start-info
     stop - GPIO.cleanup()
     help - to show help
@@ -188,8 +189,12 @@ def main():
     show - select * from data.db;
     temp - to show temperature of raspberry
     on/off - to switch on/off my lamp
-    set/unset <n> - set alarm for <n> seconds
+    set/unset <n> - set alarm for <n> seconds\
     """
+    update.message.reply_text(textwrap.dedent(cmds))
+
+
+def main():
     updater = Updater(get_token())
 
     # Get the dispatcher to register handlers
@@ -203,6 +208,7 @@ def main():
     dp.add_handler(CommandHandler("ask", ask))
     dp.add_handler(CommandHandler("r", sigrecord))
     dp.add_handler(CommandHandler("show", show_db))
+    dp.add_handler(CommandHandler("scmd", show_commands))
     dp.add_handler(CommandHandler("temp", temp))
 
     dp.add_handler(CommandHandler("on", on))
