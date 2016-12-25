@@ -24,6 +24,10 @@ import subprocess
 import os
 import sqlite_handler as sh
 
+import RPi.GPIO as GPIO
+GPIO.setmode(GPIO.BCM)
+GPIO.setwarnings(False)
+
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
@@ -33,8 +37,11 @@ logger.setLevel(logging.DEBUG)
 
 
 spath = os.path.dirname(os.path.realpath(__file__))
-db = sh.database(os.path.join(spath, 'data.db'))
+db = sh.database(os.path.join(spath, 'res', 'data.db'))
 listening_for_record = False
+
+RELAY_PIN = 26
+GPIO.setup(RELAY_PIN, GPIO.OUT)
 
 PHRASES = ['Чем ты занят?', 'Опять видосы смотришь?', 'Про физику не забыл?']
 
@@ -52,6 +59,10 @@ def start(bot, update):
     update.message.reply_text('Hi! Use /set <seconds> to set a timer')
 
 
+def stop(bot, update):
+    GPIO.cleanup()
+
+
 def alarm(bot, job):
     """Function to send the alarm message"""
     bot.sendMessage(job.context, text='Beep!')
@@ -63,7 +74,7 @@ def add_record(chat_id, msg_text):
     month = now.strftime("%m")
     day_time = now.strftime("%d%H%M%S")
 
-    path = os.path.join(spath, chat_id, year, month, day_time)
+    path = os.path.join(spath, 'res', 'user_data', chat_id, year, month, day_time)
     if os.path.exists(path):
         # TODO: make nicer
         assert(1 == 0)
@@ -111,18 +122,20 @@ def sigrecord(bot, update):
     update.message.reply_text('Хорошо, я слушаю 👂🏼')
 
 
-# TODO: Make it work!
 def temp(bot, update):
-    ## call date command ##
-    p = subprocess.Popen(["temp"], stdout=subprocess.PIPE)
-    # update.message.reply_text('one sec pls...')
-    # update.message.reply_text(subprocess.call("date"))
+    p = subprocess.Popen(['vcgencmd', 'measure_temp'], stdout=subprocess.PIPE)
     (output, err) = p.communicate()
-    ## Wait for date to terminate. Get return returncode ##
-    # p_status = p.wait()
     update.message.reply_text(output)
 
-# def lets_chat(bot, update, args, job_queue, chat_data):
+
+def on(bot, update):
+    GPIO.output(RELAY_PIN, 1)
+    update.message.reply_text('Лампа включена')
+
+
+def off(bot, update):
+    GPIO.output(RELAY_PIN, 0)
+    update.message.reply_text('Лампа выключена')
 
 
 def set(bot, update, args, job_queue, chat_data):
@@ -165,6 +178,18 @@ def error(bot, update, error):
 
 
 def main():
+    """
+    all commands:
+    start - show start-info
+    stop - GPIO.cleanup()
+    help - to show help
+    ask - to request for question from Finn
+    r - to record your next message
+    show - select * from data.db;
+    temp - to show temperature of raspberry
+    on/off - to switch on/off my lamp
+    set/unset <n> - set alarm for <n> seconds
+    """
     updater = Updater(get_token())
 
     # Get the dispatcher to register handlers
@@ -172,11 +197,17 @@ def main():
 
     # on different commands - answer in Telegram
     dp.add_handler(CommandHandler("start", start))
+    dp.add_handler(CommandHandler("stop", stop))
+
     dp.add_handler(CommandHandler("help", start))
     dp.add_handler(CommandHandler("ask", ask))
     dp.add_handler(CommandHandler("r", sigrecord))
     dp.add_handler(CommandHandler("show", show_db))
     dp.add_handler(CommandHandler("temp", temp))
+
+    dp.add_handler(CommandHandler("on", on))
+    dp.add_handler(CommandHandler("off", off))
+
     dp.add_handler(CommandHandler("set", set,
                                   pass_args=True,
                                   pass_job_queue=True,

@@ -2,5 +2,4 @@ token.json
 *.db
 *.pyc
 *.pid
-2016/
-107*/
+res/
