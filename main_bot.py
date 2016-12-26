@@ -13,15 +13,14 @@ import json
 import subprocess
 import os
 import textwrap
-import sqlite_handler as sh
+from src import sqlite_handler as sh
 
 import RPi.GPIO as GPIO
 GPIO.setmode(GPIO.BCM)
 GPIO.setwarnings(False)
 
 # Enable logging
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                    level=logging.INFO)
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -41,7 +40,7 @@ PHRASES = ['Чем ты занят?', 'Опять видосы смотришь?
 
 
 def get_token():
-    path = os.path.join(spath, 'token.json')
+    path = os.path.join(spath, 'res', 'token.json')
     with open(path) as jsn:
         data = json.load(jsn)
     return data['token']
