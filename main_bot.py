@@ -3,19 +3,9 @@
 #
 # Simple Bot to send timed Telegram messages
 # This program is dedicated to the public domain under the CC0 license.
-"""
-This Bot uses the Updater class to handle the bot and the JobQueue to send
-timed messages.
-First, a few handler functions are defined. Then, those functions are passed to
-the Dispatcher and registered at their respective places.
-Then, the bot is started and runs until we press Ctrl-C on the command line.
-Usage:
-Basic Alarm Bot example, sends a message after a set time.
-Press Ctrl-C on the command line or send a signal to the process to stop the
-bot.
-"""
 
 from telegram.ext import Updater, CommandHandler, Job, MessageHandler, Filters
+import telegram
 import random
 import datetime
 import logging
@@ -37,9 +27,12 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
+RES_DIR = 'res'
 spath = os.path.dirname(os.path.realpath(__file__))
-db = sh.database(os.path.join(spath, 'res', 'data.db'))
+db = sh.database(os.path.join(spath, RES_DIR, 'data.db'))
+
 listening_for_record = False
+listening_for_list = False
 
 RELAY_PIN = 26
 GPIO.setup(RELAY_PIN, GPIO.OUT)
@@ -56,12 +49,13 @@ def get_token():
 
 # Define a few command handlers. These usually take the two arguments bot and
 # update. Error handlers also receive the raised TelegramError object in error.
-def start(bot, update):
-    update.message.reply_text('Hi! Use /set <seconds> to set a timer')
-
-
 def stop(bot, update):
     GPIO.cleanup()
+    p = subprocess.Popen([os.path.join(spath, './telegramd'), 'stop'], stdout=subprocess.PIPE)
+
+
+def restart(bot, update):
+    p = subprocess.Popen([os.path.join(spath, './telegramd'), 'restart'], stdout=subprocess.PIPE)
 
 
 def alarm(bot, job):
@@ -69,13 +63,13 @@ def alarm(bot, job):
     bot.sendMessage(job.context, text='Beep!')
 
 
-def add_record(chat_id, msg_text):
+def add_msg_record(chat_id, msg_text):
     now = datetime.datetime.utcnow()
     year = now.strftime("%Y")
     month = now.strftime("%m")
     day_time = now.strftime("%d%H%M%S")
 
-    path = os.path.join(spath, 'res', 'user_data', chat_id, year, month, day_time)
+    path = os.path.join(spath, RES_DIR, 'user_data', chat_id, year, month, day_time)
     if os.path.exists(path):
         # TODO: make nicer
         assert(1 == 0)
@@ -93,6 +87,7 @@ def add_record(chat_id, msg_text):
 
     return path
 
+
 def echo(bot, update):
     global listening_for_record
 
@@ -100,11 +95,42 @@ def echo(bot, update):
     msg_text = update.message.text.encode('utf-8')
 
     if listening_for_record:
-        path = add_record(chat_id, msg_text)
+        path = add_msg_record(chat_id, msg_text)
         listening_for_record = False
-        update.message.reply_text('Your message is stored at {}.\nAnything else?'.format(path))
+        update.message.reply_text('Записал ✅\nПуть к файлу: {}'.format(path))
     else:
         update.message.reply_text('echo: {}'.format(msg_text))
+
+# def add_task_record():
+#     now = datetime.datetime.utcnow()
+#     year = now.strftime("%Y")
+#     month = now.strftime("%m")
+#     day_time = now.strftime("%d%H%M%S")
+#
+#     path = os.path.join(spath, RES_DIR, 'user_data', chat_id, year, month, day_time)
+#     if os.path.exists(path):
+#         # TODO: make nicer
+#         assert(1 == 0)
+#     else:
+#         os.makedirs(path)
+#
+#     msg_path = os.path.join(path, 'msg.txt')
+#
+#     cur_secs = int(now.strftime("%s"))
+#     values = [chat_id, cur_secs, msg_path]
+#     db.insert('users', values)
+#
+#     with open(msg_path, 'w') as f:
+#         f.write(msg_text)
+#
+#     return path
+
+
+def todo(bot, update, args):
+    global listening_for_list
+    msg_text = (' '.join(args)).encode('utf-8')
+    listening_for_list = True
+    update.message.reply_text('"{}"'.format(msg_text) + '\nВ какой список добавить? 🤔')
 
 
 def show_db(bot, update):
@@ -181,11 +207,13 @@ def error(bot, update, error):
 def show_commands(bot, update):
     cmds = """\
     Command List:
-    start - show start-info
+    start - to show start-info
+    restart - to restart the Bot
     stop - GPIO.cleanup()
     help - to show help
     ask - to request for question from Finn
     r - to record your next message
+    scmd - to show Command List
     show - select * from data.db;
     temp - to show temperature of raspberry
     on/off - to switch on/off my lamp
@@ -197,18 +225,24 @@ def show_commands(bot, update):
 def main():
     updater = Updater(get_token())
 
+    bot = telegram.Bot(token=get_token())
+    bot.sendMessage(chat_id=107183599, text='Я вернулся 🙂')
+
     # Get the dispatcher to register handlers
     dp = updater.dispatcher
 
     # on different commands - answer in Telegram
-    dp.add_handler(CommandHandler("start", start))
+    dp.add_handler(CommandHandler("start", show_commands))
+    dp.add_handler(CommandHandler("scmd", show_commands))
+    dp.add_handler(CommandHandler("help", show_commands))
+    dp.add_handler(CommandHandler("restart", restart))
     dp.add_handler(CommandHandler("stop", stop))
 
-    dp.add_handler(CommandHandler("help", start))
+    dp.add_handler(CommandHandler("todo", todo, pass_args=True))
+
     dp.add_handler(CommandHandler("ask", ask))
     dp.add_handler(CommandHandler("r", sigrecord))
     dp.add_handler(CommandHandler("show", show_db))
-    dp.add_handler(CommandHandler("scmd", show_commands))
     dp.add_handler(CommandHandler("temp", temp))
 
     dp.add_handler(CommandHandler("on", on))
