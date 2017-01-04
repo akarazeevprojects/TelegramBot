@@ -77,7 +77,9 @@ def add_msg_record(chat_id, msg_text):
 
     msg_path = os.path.join(path, 'msg.txt')
 
-    cur_secs = int(now.strftime("%s"))
+    epoch = datetime.datetime.utcfromtimestamp(0)
+    cur_secs = int((datetime.datetime.utcnow() - epoch).total_seconds())
+
     values = [chat_id, cur_secs, msg_path]
     db.insert('users', values)
 
@@ -99,6 +101,7 @@ def echo(bot, update):
         update.message.reply_text('Записал ✅\nПуть к файлу: {}'.format(path))
     else:
         update.message.reply_text('echo: {}'.format(msg_text))
+
 
 # def add_task_record():
 #     now = datetime.datetime.utcnow()
@@ -123,6 +126,48 @@ def echo(bot, update):
 #         f.write(msg_text)
 #
 #     return path
+
+
+def add_act_record(bot, update, args):
+    epoch = datetime.datetime.utcfromtimestamp(0)
+    cur_secs = int((datetime.datetime.utcnow() - epoch).total_seconds())
+
+    chat_id = str(update.message.chat.id)
+    activity = (' '.join(args)).lower().encode('utf-8')
+
+    values = [chat_id, cur_secs, activity]
+    db.insert('acts', values)
+    update.message.reply_text('Ok')
+
+
+def show_activities(bot, update):
+    cursor = db.select_all('acts')
+
+    text = []
+    dict_to_print = {}
+    epoch = datetime.datetime.utcfromtimestamp(0)
+
+    for i in cursor:
+        date_stamp = int((datetime.datetime.utcfromtimestamp(i[1]).replace(hour=0, minute=0, second=0, microsecond=0) - epoch).total_seconds())
+
+        activity = i[2]
+        activity = '. '.join([s.strip().capitalize() for s in activity.split('.')])
+
+        date_str = datetime.datetime.utcfromtimestamp(i[1]).strftime('%y-%b-%d, %a, %H:%M') + ' - ' + activity
+
+        if date_stamp in dict_to_print:
+            dict_to_print[date_stamp].append(date_str)
+        else:
+            dict_to_print[date_stamp] = [date_str]
+
+    for i in list(dict_to_print.keys()):
+        for j in dict_to_print[i]:
+            text.append(j)
+        text.append('-----|=======>')
+
+    text = text[:-1]
+    text = '\n'.join(text)
+    update.message.reply_text(text)
 
 
 def todo(bot, update, args):
@@ -238,6 +283,9 @@ def main():
     dp.add_handler(CommandHandler("stop", stop))
 
     dp.add_handler(CommandHandler("todo", todo, pass_args=True))
+
+    dp.add_handler(CommandHandler("add", add_act_record, pass_args=True))
+    dp.add_handler(CommandHandler("s_acts", show_activities))
 
     dp.add_handler(CommandHandler("ask", ask))
     dp.add_handler(CommandHandler("r", sigrecord))
