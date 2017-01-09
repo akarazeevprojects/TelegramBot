@@ -140,6 +140,12 @@ def add_act_record(bot, update, args):
     update.message.reply_text('Ok')
 
 
+def get_time():
+    epoch = datetime.datetime.utcfromtimestamp(0)
+    cur_secs = int((datetime.datetime.utcnow() - epoch).total_seconds())
+    return datetime.datetime.utcfromtimestamp(cur_secs).strftime('%y-%b-%d, %a, %H:%M')
+
+
 def show_activities(bot, update):
     cursor = db.select_all('acts')
 
@@ -160,12 +166,14 @@ def show_activities(bot, update):
         else:
             dict_to_print[date_stamp] = [date_str]
 
-    for i in list(dict_to_print.keys()):
+    for i in sorted(list(dict_to_print.keys())):
         for j in dict_to_print[i]:
             text.append(j)
         text.append('-----|=======>')
 
     text = text[:-1]
+    text.append('~~~~~~~~~~~~~~')
+    text.append(get_time() + ' - ' + 'now')
     text = '\n'.join(text)
     update.message.reply_text(text)
 
