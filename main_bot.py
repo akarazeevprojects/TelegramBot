@@ -14,6 +14,7 @@ import subprocess
 import os
 import textwrap
 from src import sqlite_handler as sh
+from src import timedel_repr as tdr
 
 import RPi.GPIO as GPIO
 GPIO.setmode(GPIO.BCM)
@@ -156,12 +157,16 @@ def show_activities(bot, update):
     epoch = datetime.datetime.utcfromtimestamp(0)
 
     for i in cursor:
+        # to determine the midnight of the date
         date_stamp = int((datetime.datetime.utcfromtimestamp(i[1]).replace(hour=0, minute=0, second=0, microsecond=0) - epoch).total_seconds())
 
         activity = i[2]
         activity = '. '.join([s.strip().capitalize() for s in activity.split('.')])
 
-        date_str = datetime.datetime.utcfromtimestamp(i[1]).strftime('%y-%b-%d, %a, %H:%M') + ' - ' + activity
+        # old
+        # date_str = datetime.datetime.utcfromtimestamp(i[1]).strftime('%y-%b-%d, %a, %H:%M') + ' - ' + activity
+
+        date_str = "{} - {}".format(tdr.timedel_repr(datetime.datetime.utcnow() - datetime.datetime.utcfromtimestamp(i[1])), activity.encode('utf-8'))
 
         if date_stamp in dict_to_print:
             dict_to_print[date_stamp].append(date_str)
