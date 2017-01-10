@@ -25,6 +25,8 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
+lamp_state = 0
+
 
 RES_DIR = 'res'
 spath = os.path.dirname(os.path.realpath(__file__))
@@ -207,14 +209,16 @@ def temp(bot, update):
     update.message.reply_text(output)
 
 
-def on(bot, update):
-    GPIO.output(RELAY_PIN, 1)
-    update.message.reply_text('Лампа включена')
+def lamp_switch(bot, update):
+    global lamp_state
 
-
-def off(bot, update):
-    GPIO.output(RELAY_PIN, 0)
-    update.message.reply_text('Лампа выключена')
+    lamp_state = 1 - lamp_state
+    GPIO.output(RELAY_PIN, lamp_state)
+    print('Im here')
+    if lamp_state == 1:
+        update.message.reply_text('Лампа включена')
+    else:
+        update.message.reply_text('Лампа выключена')
 
 
 def set(bot, update, args, job_queue, chat_data):
@@ -300,8 +304,7 @@ def main():
     dp.add_handler(CommandHandler("show", show_db))
     dp.add_handler(CommandHandler("temp", temp))
 
-    dp.add_handler(CommandHandler("on", on))
-    dp.add_handler(CommandHandler("off", off))
+    dp.add_handler(CommandHandler("switch", lamp_switch))
 
     dp.add_handler(CommandHandler("set", set,
                                   pass_args=True,
