@@ -176,10 +176,10 @@ def show_activities(bot, update):
     for i in sorted(list(dict_to_print.keys())):
         for j in dict_to_print[i]:
             text.append(j)
-        text.append('-----|=======>')
+        text.append('                    -----|=======>')
 
     text = text[:-1]
-    text.append('~~~~~~~~~~~~~~')
+    text.append('                    ~~~~~~~~~~~~')
     text.append(get_time() + ' - ' + 'now')
     text = '\n'.join(text)
     update.message.reply_text(text)
