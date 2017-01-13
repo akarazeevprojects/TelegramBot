@@ -1,8 +1,8 @@
 #### List all Activities
 
-| ![demo1](demo/1.jpg) | ![demo1](demo/2.jpg) |
+| <img src="demo/1.jpg" width="200"> | <img src="demo/2.jpg" width="200"> |
 | :------------- | :------------- |
-| ![demo1](demo/3.jpg) | ![demo1](demo/4.jpg) |
+| <img src="demo/3.jpg" width="200"> | <img src="demo/4.jpg" width="200"> |
 
 The work is still in progress...
 
