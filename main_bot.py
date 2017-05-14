@@ -1,27 +1,25 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-#
-# Simple Bot to send timed Telegram messages
-# This program is dedicated to the public domain under the CC0 license.
 
 from telegram.ext import Updater, CommandHandler, Job, MessageHandler, Filters
-import telegram
-import random
-import datetime
-import logging
-import json
-import subprocess
-import os
-import textwrap
 from src import sqlite_handler as sh
 from src import timedel_repr as tdr
+import subprocess
+import textwrap
+import telegram
+import datetime
+import logging
+import random
+import json
+import os
 
 import RPi.GPIO as GPIO
 GPIO.setmode(GPIO.BCM)
 GPIO.setwarnings(False)
 
 # Enable logging
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - \
+                            %(message)s', level=logging.INFO)
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -53,11 +51,14 @@ def get_token():
 # update. Error handlers also receive the raised TelegramError object in error.
 def stop(bot, update):
     GPIO.cleanup()
-    p = subprocess.Popen([os.path.join(spath, './telegramd'), 'stop'], stdout=subprocess.PIPE)
+    p = subprocess.Popen([os.path.join(spath, './telegramd'), 'stop'],
+                         stdout=subprocess.PIPE)
 
 
 def restart(bot, update):
-    p = subprocess.Popen([os.path.join(spath, './telegramd'), 'restart'], stdout=subprocess.PIPE)
+    update.message.reply_text('will be back soon...')
+    p = subprocess.Popen([os.path.join(spath, './telegramd'), 'restart'],
+                         stdout=subprocess.PIPE)
 
 
 def alarm(bot, job):
@@ -71,7 +72,8 @@ def add_msg_record(chat_id, msg_text):
     month = now.strftime("%m")
     day_time = now.strftime("%d%H%M%S")
 
-    path = os.path.join(spath, RES_DIR, 'user_data', chat_id, year, month, day_time)
+    path = os.path.join(spath, RES_DIR, 'user_data', chat_id,
+                        year, month, day_time)
     if os.path.exists(path):
         # TODO: make nicer
         assert(1 == 0)
@@ -112,7 +114,8 @@ def echo(bot, update):
 #     month = now.strftime("%m")
 #     day_time = now.strftime("%d%H%M%S")
 #
-#     path = os.path.join(spath, RES_DIR, 'user_data', chat_id, year, month, day_time)
+#     path = os.path.join(spath, RES_DIR, 'user_data', chat_id,
+#                         year, month, day_time)
 #     if os.path.exists(path):
 #         # TODO: make nicer
 #         assert(1 == 0)
@@ -146,7 +149,8 @@ def add_act_record(bot, update, args):
 def get_time():
     epoch = datetime.datetime.utcfromtimestamp(0)
     cur_secs = int((datetime.datetime.utcnow() - epoch).total_seconds())
-    return datetime.datetime.utcfromtimestamp(cur_secs).strftime('%y-%b-%d, %a, %H:%M')
+    return datetime.datetime.utcfromtimestamp(cur_secs).strftime('%y-%b-%d, \
+                                                                  %a, %H:%M')
 
 
 def show_activities(bot, update):
@@ -158,15 +162,22 @@ def show_activities(bot, update):
 
     for i in cursor:
         # to determine the midnight of the date
-        date_stamp = int((datetime.datetime.utcfromtimestamp(i[1]).replace(hour=0, minute=0, second=0, microsecond=0) - epoch).total_seconds())
+        date_stamp = int((datetime.datetime.utcfromtimestamp(i[1]).
+                          replace(hour=0, minute=0, second=0, microsecond=0) -
+                          epoch).total_seconds())
 
         activity = i[2]
-        activity = '. '.join([s.strip().capitalize() for s in activity.split('.')])
+        activity = '. '.join([s.strip().capitalize()
+                             for s in activity.split('.')])
 
         # old
-        # date_str = datetime.datetime.utcfromtimestamp(i[1]).strftime('%y-%b-%d, %a, %H:%M') + ' - ' + activity
+        # date_str = datetime.datetime.utcfromtimestamp(i[1]).
+        # strftime('%y-%b-%d, %a, %H:%M') + ' - ' + activity
 
-        date_str = "{} - {}".format(tdr.timedel_repr(datetime.datetime.utcnow() - datetime.datetime.utcfromtimestamp(i[1])), activity.encode('utf-8'))
+        date_str = "{} - {}".format(tdr.timedel_repr(datetime.datetime.
+                                    utcnow() - datetime.datetime.
+                                    utcfromtimestamp(i[1])),
+                                    activity.encode('utf-8'))
 
         if date_stamp in dict_to_print:
             dict_to_print[date_stamp].append(date_str)
@@ -189,7 +200,8 @@ def todo(bot, update, args):
     global listening_for_list
     msg_text = (' '.join(args)).encode('utf-8')
     listening_for_list = True
-    update.message.reply_text('"{}"'.format(msg_text) + '\nВ какой список добавить? 🤔')
+    update.message.reply_text('"{}"'.format(msg_text) +
+                              '\nВ какой список добавить? 🤔')
 
 
 def show_db(bot, update):
@@ -212,6 +224,11 @@ def temp(bot, update):
     p = subprocess.Popen(['vcgencmd', 'measure_temp'], stdout=subprocess.PIPE)
     (output, err) = p.communicate()
     update.message.reply_text(output)
+
+
+def get_ip(bot, update):
+    public_ip = subprocess.check_output(['curl', '-s', 'ipinfo.io/ip'])
+    update.message.reply_text(public_ip)
 
 
 def lamp_switch(bot, update):
@@ -268,6 +285,7 @@ def error(bot, update, error):
 def show_commands(bot, update):
     cmds = """\
     Command List:
+    ------------
     start - to show start-info
     restart - to restart the Bot
     stop - GPIO.cleanup()
@@ -277,7 +295,8 @@ def show_commands(bot, update):
     scmd - to show Command List
     show - select * from data.db;
     temp - to show temperature of raspberry
-    on/off - to switch on/off my lamp
+    ip - show public ip of router
+    switch - to switch on/off my lamp
     set/unset <n> - set alarm for <n> seconds\
     """
     update.message.reply_text(textwrap.dedent(cmds))
@@ -308,6 +327,7 @@ def main():
     dp.add_handler(CommandHandler("r", sigrecord))
     dp.add_handler(CommandHandler("show", show_db))
     dp.add_handler(CommandHandler("temp", temp))
+    dp.add_handler(CommandHandler("ip", get_ip))
 
     dp.add_handler(CommandHandler("switch", lamp_switch))
 
