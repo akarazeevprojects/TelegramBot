@@ -107,7 +107,6 @@ def echo(bot, update):
     else:
         update.message.reply_text('echo: {}'.format(msg_text))
 
-
 # def add_task_record():
 #     now = datetime.datetime.utcnow()
 #     year = now.strftime("%Y")
@@ -299,7 +298,8 @@ def show_commands(bot, update):
     switch - to switch on/off my lamp
     set/unset <n> - set alarm for <n> seconds\
     """
-    update.message.reply_text(textwrap.dedent(cmds))
+    update.message.reply_sticker("CAADAgADzgAD0lqIAZO932_vnvfbAg")
+    # update.message.reply_text(textwrap.dedent(cmds))
 
 
 def main():
