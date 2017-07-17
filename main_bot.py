@@ -4,6 +4,8 @@
 from telegram.ext import Updater, CommandHandler, Job, MessageHandler, Filters
 from src import sqlite_handler as sh
 from src import timedel_repr as tdr
+from src.play import play_audio
+from gtts import gTTS
 import subprocess
 import textwrap
 import telegram
@@ -105,6 +107,10 @@ def echo(bot, update):
         listening_for_record = False
         update.message.reply_text('Записал ✅\nПуть к файлу: {}'.format(path))
     else:
+        tts = gTTS(text=msg_text, lang='ru')
+        tts.save(os.path.join(spath, 'res', "tmp.mp3"))
+        play_audio(os.path.join(spath, 'res', "tmp.mp3"))
+
         update.message.reply_text('echo: {}'.format(msg_text))
 
 # def add_task_record():
