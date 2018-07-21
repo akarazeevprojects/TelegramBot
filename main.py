@@ -6,7 +6,8 @@ import RPi.GPIO as GPIO
 import logging
 
 # Enable logging
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                    level=logging.INFO)
 
 GPIO.setmode(GPIO.BCM)
 GPIO.setwarnings(False)
@@ -61,20 +62,25 @@ def switcher(bot, update, title):
 
 def switch_left_lamp(bot, update):
     switcher(bot, update, 'Left lamp')
+    logging.info('Left lamp')
 
 
 def switch_right_lamp(bot, update):
     switcher(bot, update, 'Right lamp')
+    logging.info('Right lamp')
 
 
 def switch_fan(bot, update):
     switcher(bot, update, 'Fan')
+    logging.info('Fan')
 
 
 def main():
     # Setup GPIO.OUT.
     for key in relays:
         GPIO.setup(key, GPIO.OUT)
+        # Set to 0 every relay.
+        GPIO.output(key, relays[key])
 
     token = get_token()
     req = telegram.utils.request.Request(proxy_url='socks5h://127.0.0.1:9050',
