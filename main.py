@@ -3,17 +3,21 @@ import subprocess
 import telegram
 import json
 import RPi.GPIO as GPIO
+import logging
+
+# Enable logging
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
 GPIO.setmode(GPIO.BCM)
 GPIO.setwarnings(False)
 
 gpio_mapping = {
-    'Left lamp': 12,
+    'Fan': 12,
     'Right lamp': 16,
-    'Fan': 20
+    'Left lamp': 20
 }
 
-# {gpio#: state}.
+# {gpio: state}.
 relays = {
     12: 0,
     16: 0,
@@ -56,15 +60,15 @@ def switcher(bot, update, title):
 
 
 def switch_left_lamp(bot, update):
-    switcher('Left lamp')
+    switcher(bot, update, 'Left lamp')
 
 
 def switch_right_lamp(bot, update):
-    switcher('Right lamp')
+    switcher(bot, update, 'Right lamp')
 
 
 def switch_fan(bot, update):
-    switcher('Fan')
+    switcher(bot, update, 'Fan')
 
 
 def main():
